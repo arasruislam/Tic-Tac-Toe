@@ -12,21 +12,31 @@ function calculateWinner(squares) {
     [2, 4, 6],
   ];
 
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
+  for (const line of lines) {
+    const [a, b, c] = line;
 
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
+      return {
+        winner: squares[a],
+        winningLine: line,
+      };
     }
   }
 
-  return null;
+  return {
+    winner: null,
+    winningLine: [],
+  };
 }
 
-function Square({ value, onSquareClick }) {
+function Square({ value, onSquareClick, isWinning }) {
   return (
     <button
-      className="bg-white border border-slate-200 rounded-xl h-16 w-16 text-2xl font-bold text-shadow-slate-700 shadow-sm transition-all duration-200 hover:border-violet-400 hover:bg-violet-50 hover:text-violet-600"
+      className={`bg-white border border-slate-200 rounded-xl h-16 w-16 text-2xl font-bold text-shadow-slate-700 shadow-sm transition-all duration-200 hover:border-violet-400 hover:bg-violet-50 hover:text-violet-600 ${
+        isWinning
+          ? "bg-violet-100 border-violet-500 text-violet-600"
+          : "border-slate-200 text-slate-700 hover:border-violet-400 hover:bg-violet-50"
+      }`}
       onClick={onSquareClick}
     >
       {value}
@@ -35,24 +45,25 @@ function Square({ value, onSquareClick }) {
 }
 
 function Board({ xIsNext, squares, onPlay }) {
-  const winner = calculateWinner(squares);
+  const { winner, winningLine } = calculateWinner(squares);
+
+  const isDraw = !winner && squares.every(Boolean);
+
   let status;
 
   if (winner) {
-    status = `Winner #${winner}`;
+    status = `Winner: ${winner}`;
+  } else if (isDraw) {
+    status = "Game Draw!";
   } else {
-    status = "Next player: " + (xIsNext ? "X" : "0");
+    status = `Next player: ${xIsNext ? "X" : "O"}`;
   }
 
   function handleClick(i) {
-    if (squares[i] || calculateWinner(squares)) return;
+    if (squares[i] || winner) return;
 
     const nextSquares = squares.slice();
-    if (xIsNext) {
-      nextSquares[i] = "X";
-    } else {
-      nextSquares[i] = "O";
-    }
+    nextSquares[i] = xIsNext ? "X" : "O";
 
     onPlay(nextSquares);
   }
@@ -60,20 +71,38 @@ function Board({ xIsNext, squares, onPlay }) {
   return (
     <div className="p-4 space-y-2">
       <div>{status}</div>
+
       <div className="flex space-x-2">
-        <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
-        <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
-        <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
+        {squares.slice(0, 3).map((value, i) => (
+          <Square
+            key={i}
+            value={value}
+            isWinning={winningLine.includes(i)}
+            onSquareClick={() => handleClick(i)}
+          />
+        ))}
       </div>
+
       <div className="flex space-x-2">
-        <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
-        <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
-        <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
+        {squares.slice(3, 6).map((value, i) => (
+          <Square
+            key={i + 3}
+            value={value}
+            isWinning={winningLine.includes(i + 3)}
+            onSquareClick={() => handleClick(i + 3)}
+          />
+        ))}
       </div>
+
       <div className="flex space-x-2">
-        <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
-        <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
-        <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
+        {squares.slice(6, 9).map((value, i) => (
+          <Square
+            key={i + 6}
+            value={value}
+            isWinning={winningLine.includes(i + 6)}
+            onSquareClick={() => handleClick(i + 6)}
+          />
+        ))}
       </div>
     </div>
   );
@@ -81,30 +110,25 @@ function Board({ xIsNext, squares, onPlay }) {
 
 export default function Game() {
   const [history, setHistory] = useState([Array(9).fill(null)]);
-  const [xIsNext, setXIsNext] = useState(true);
   const [currentMove, setCurrentMove] = useState(0);
 
-  const currentSquare = history[currentMove];
+  const currentSquares = history[currentMove];
+
+  const xIsNext = currentMove % 2 === 0;
 
   function handlePlay(nextSquares) {
-    setXIsNext(!xIsNext);
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+
     setHistory(nextHistory);
     setCurrentMove(nextHistory.length - 1);
   }
 
   function jumpTo(move) {
     setCurrentMove(move);
-    setXIsNext(move % 2 == 0);
   }
 
-  const move = history.map((squares, move) => {
-    let description;
-    if (move > 0) {
-      description = `Go to move #${move}`;
-    } else {
-      description = "Game not start yet";
-    }
+  const moves = history.map((squares, move) => {
+    const description = move > 0 ? `Go to move #${move}` : "Game start";
 
     return (
       <li key={move}>
@@ -115,14 +139,26 @@ export default function Game() {
     );
   });
 
+  function handleRestart() {
+    setHistory([Array(9).fill(null)]);
+    setCurrentMove(0);
+  }
+
   return (
-    <div className="flex gap-4">
-      <div>
-        <Board xIsNext={xIsNext} squares={currentSquare} onPlay={handlePlay} />
+    <>
+      <div className="flex gap-4">
+        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+
+        <div>
+          <ol>{moves}</ol>
+        </div>
       </div>
-      <div>
-        <ol>{move}</ol>
-      </div>
-    </div>
+      <button
+        onClick={handleRestart}
+        className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-all duration-200"
+      >
+        Restart Game
+      </button>
+    </>
   );
 }
