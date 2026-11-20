@@ -1,17 +1,9 @@
 import { useEffect, useState } from "react";
 
-// Theme initialization
-function getInitialTheme() {
-  const savedTheme = localStorage.getItem("tic-tac-toe-theme");
+// =====================================
+// GAME LOGIC
+// =====================================
 
-  if (savedTheme) {
-    return savedTheme === "dark";
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
-// Winner Calculation
 function calculateWinner(squares) {
   const lines = [
     [0, 1, 2],
@@ -28,308 +20,336 @@ function calculateWinner(squares) {
     const [a, b, c] = line;
 
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return {
-        winner: squares[a],
-        winningLine: line,
-      };
+      return { winner: squares[a], winningLine: line };
     }
   }
 
-  return {
-    winner: null,
-    winningLine: [],
-  };
+  return { winner: null, winningLine: [] };
 }
 
-// Theme Toggle
+// =====================================
+// THEME TOGGLE
+// =====================================
+
 function ThemeToggle({ isDark, onToggle }) {
   return (
     <button
       onClick={onToggle}
-      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-      title={`Switch to ${isDark ? "light" : "dark"} mode`}
-      className={`
-        fixed bottom-5 right-5 z-50
-        h-12 w-12 rounded-full
-        flex items-center justify-center
-        border shadow-lg
-        transition-all duration-300
-        hover:scale-110 active:scale-95
-        focus:outline-none focus-visible:ring-2
-        focus-visible:ring-violet-500
-        ${
-          isDark
-            ? "bg-slate-800 border-slate-700 text-amber-300 shadow-black/30"
-            : "bg-white border-slate-200 text-violet-600 shadow-slate-300/50"
-        }
-      `}
+      aria-label="Toggle theme"
+      title="Toggle theme"
+      className={`fixed bottom-4 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full border shadow-md transition hover:scale-105 ${
+        isDark
+          ? "border-white/10 bg-[#385a71] text-[#f6b26b]"
+          : "border-[#385a71]/10 bg-white text-[#385a71]"
+      }`}
     >
       {isDark ? (
-        // Sun Icon
         <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="21"
-          height="21"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeWidth="1.8"
+          className="h-[18px] w-[18px]"
         >
           <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2" />
-          <path d="M12 20v2" />
-          <path d="m4.93 4.93 1.42 1.42" />
-          <path d="m17.65 17.65 1.42 1.42" />
-          <path d="M2 12h2" />
-          <path d="M20 12h2" />
-          <path d="m6.35 17.65-1.42 1.42" />
-          <path d="m19.07 4.93-1.42 1.42" />
+          <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
         </svg>
       ) : (
-        // Moon Icon
         <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="21"
-          height="21"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeWidth="1.8"
+          className="h-[18px] w-[18px]"
         >
-          <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.463.402.807a6.5 6.5 0 0 0 8.268 8.268c.344-.215.829-.003.803.397Z" />
+          <path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z" />
         </svg>
       )}
     </button>
   );
 }
 
-// Square Component
-function Square({ value, onSquareClick, isWinning, isDark }) {
+// =====================================
+// PLAYER INDICATOR
+// =====================================
+
+function PlayerIndicator({ player, isActive, isDark }) {
+  const isX = player === "X";
+
+  return (
+    <div
+      className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg border px-2.5 py-2 transition ${
+        isActive
+          ? isDark
+            ? "border-[#5080a1]/60 bg-[#5080a1]/15"
+            : "border-[#5080a1]/50 bg-[#5080a1]/10"
+          : isDark
+            ? "border-white/[0.06] bg-white/[0.025]"
+            : "border-[#385a71]/10 bg-white"
+      }`}
+    >
+      <span
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-lg font-bold ${
+          isX
+            ? "bg-[#f6b26b]/15 text-[#f6b26b]"
+            : "bg-[#93c47d]/15 text-[#93c47d]"
+        }`}
+      >
+        {player}
+      </span>
+
+      <div className="min-w-0">
+        <p
+          className={`text-xs font-semibold ${
+            isDark ? "text-white" : "text-[#385a71]"
+          }`}
+        >
+          Player {player}
+        </p>
+        <p className="text-[10px] text-[#aaaaaa]">
+          {isActive ? "Playing" : "Waiting"}
+        </p>
+      </div>
+
+      {isActive && (
+        <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[#93c47d]" />
+      )}
+    </div>
+  );
+}
+
+// =====================================
+// SQUARE
+// =====================================
+
+function Square({ value, onClick, isWinning, isDark }) {
+  const markColor = value === "X" ? "text-[#f6b26b]" : "text-[#93c47d]";
+
   return (
     <button
-      onClick={onSquareClick}
+      onClick={onClick}
+      disabled={Boolean(value)}
       aria-label={value ? `Square ${value}` : "Empty square"}
-      className={`
-        h-16 w-16 sm:h-[72px] sm:w-[72px]
-        rounded-xl flex items-center justify-center
-        text-3xl sm:text-4xl font-bold
-        border transition-all duration-200
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400
-        ${
-          isWinning
-            ? isDark
-              ? "bg-violet-950 border-violet-500 shadow-inner"
-              : "bg-violet-100 border-violet-400 shadow-inner"
-            : value
-              ? isDark
-                ? "bg-slate-800 border-slate-700 shadow-sm"
-                : "bg-white border-slate-200 shadow-sm"
-              : isDark
-                ? "bg-slate-800/70 border-slate-700 hover:bg-violet-950 hover:border-violet-500 active:scale-95"
-                : "bg-slate-50 border-slate-200 hover:bg-violet-50 hover:border-violet-300 active:scale-95"
-        }
-        ${!value && !isWinning ? "cursor-pointer" : "cursor-default"}
-        ${value === "X" ? "text-violet-500" : "text-sky-500"}
-      `}
+      className={`flex h-[66px] w-[66px] items-center justify-center rounded-xl border text-[32px] font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5080a1] sm:h-[70px] sm:w-[70px] ${
+        isWinning
+          ? "border-[#93c47d] bg-[#93c47d]/15 shadow-[0_0_16px_rgba(147,196,125,0.12)]"
+          : isDark
+            ? "border-white/[0.07] bg-white/[0.035] hover:border-[#5080a1]/60 hover:bg-[#5080a1]/10"
+            : "border-[#385a71]/10 bg-[#f5f8fa] hover:border-[#5080a1]/50 hover:bg-[#5080a1]/[0.06]"
+      } ${value ? markColor : ""}`}
     >
       {value}
     </button>
   );
 }
 
-// Game Board
-function Board({ xIsNext, squares, onPlay, isDark }) {
+// =====================================
+// BOARD
+// =====================================
+
+function Board({ squares, xIsNext, onPlay, isDark }) {
   const { winner, winningLine } = calculateWinner(squares);
-
   const isDraw = !winner && squares.every(Boolean);
-  const gameOver = winner || isDraw;
+  const finished = Boolean(winner || isDraw);
 
-  let status;
+  const status = winner
+    ? `${winner} wins!`
+    : isDraw
+      ? "It's a draw!"
+      : `${xIsNext ? "Player X" : "Player O"}'s turn`;
 
-  if (winner) {
-    status = `Player ${winner} wins!`;
-  } else if (isDraw) {
-    status = "It's a draw!";
-  } else {
-    status = `Player ${xIsNext ? "X" : "O"}'s turn`;
-  }
+  function handleClick(index) {
+    if (squares[index] || finished) return;
 
-  function handleClick(i) {
-    if (squares[i] || winner) return;
-
-    const nextSquares = squares.slice();
-    nextSquares[i] = xIsNext ? "X" : "O";
-
+    const nextSquares = [...squares];
+    nextSquares[index] = xIsNext ? "X" : "O";
     onPlay(nextSquares);
   }
 
-  const mutedText = isDark ? "text-slate-400" : "text-slate-400";
-  const headingText = isDark ? "text-slate-100" : "text-slate-800";
-
   return (
-    <div className="w-full">
-      {/* Status */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p
-            className={`text-[10px] font-semibold uppercase tracking-widest ${mutedText} mb-1`}
-          >
-            Game Status
-          </p>
-
-          <h2 className={`text-lg font-bold ${headingText}`}>{status}</h2>
-        </div>
-
+    <div className="flex flex-col items-center">
+      {/* GAME STATUS */}
+      <div
+        className={`mb-4 flex items-center gap-2 rounded-full px-3.5 py-1.5 ${
+          isDark ? "bg-white/[0.05]" : "bg-[#385a71]/[0.05]"
+        }`}
+      >
         <span
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-            gameOver
-              ? isDark
-                ? "bg-violet-950 text-violet-300"
-                : "bg-violet-100 text-violet-700"
-              : isDark
-                ? "bg-emerald-950 text-emerald-400"
-                : "bg-emerald-50 text-emerald-600"
+          className={`h-1.5 w-1.5 rounded-full ${
+            finished
+              ? "bg-[#93c47d]"
+              : xIsNext
+                ? "bg-[#f6b26b]"
+                : "bg-[#93c47d]"
+          }`}
+        />
+        <span
+          className={`text-xs font-semibold ${
+            isDark ? "text-white" : "text-[#385a71]"
           }`}
         >
-          {gameOver ? "Finished" : "● Playing"}
+          {status}
         </span>
       </div>
 
-      {/* Players */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {["X", "O"].map((player) => {
-          const isActive = !gameOver && (player === "X" ? xIsNext : !xIsNext);
-
-          const playerWon = winner === player;
-          const isX = player === "X";
-
-          return (
-            <div
-              key={player}
-              className={`
-                flex items-center gap-2 rounded-xl border p-2 transition-colors
-                ${
-                  isActive
-                    ? isX
-                      ? isDark
-                        ? "bg-violet-950/60 border-violet-700"
-                        : "bg-violet-50 border-violet-300"
-                      : isDark
-                        ? "bg-sky-950/50 border-sky-700"
-                        : "bg-sky-50 border-sky-300"
-                    : isDark
-                      ? "bg-slate-800 border-slate-700"
-                      : "bg-white border-slate-200"
-                }
-              `}
-            >
-              <div
-                className={`h-8 w-8 rounded-lg flex items-center justify-center text-lg font-bold ${
-                  isX
-                    ? isDark
-                      ? "bg-violet-950 text-violet-400"
-                      : "bg-violet-100 text-violet-600"
-                    : isDark
-                      ? "bg-sky-950 text-sky-400"
-                      : "bg-sky-100 text-sky-600"
-                }`}
-              >
-                {player}
-              </div>
-
-              <div>
-                <p
-                  className={`text-xs font-bold ${
-                    isDark ? "text-slate-100" : "text-slate-800"
-                  }`}
-                >
-                  Player {player}
-                </p>
-
-                <p
-                  className={`text-[10px] ${
-                    isDark ? "text-slate-400" : "text-slate-400"
-                  }`}
-                >
-                  {playerWon ? "Winner" : isActive ? "Your turn" : "Waiting"}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+      {/* GAME GRID */}
+      <div className="grid grid-cols-3 gap-2">
+        {squares.map((value, index) => (
+          <Square
+            key={index}
+            value={value}
+            onClick={() => handleClick(index)}
+            isWinning={winningLine.includes(index)}
+            isDark={isDark}
+          />
+        ))}
       </div>
 
-      {/* Board */}
-      <div
-        className={`rounded-2xl border p-3 flex justify-center shadow-sm ${
-          isDark ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"
+      <p
+        className={`mt-4 text-[11px] ${
+          isDark ? "text-[#aaaaaa]" : "text-[#385a71]/55"
         }`}
       >
-        <div className="grid grid-cols-3 gap-2">
-          {squares.map((value, i) => (
-            <Square
-              key={i}
-              value={value}
-              isWinning={winningLine.includes(i)}
-              isDark={isDark}
-              onSquareClick={() => handleClick(i)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Result */}
-      {gameOver && (
-        <div
-          className={`mt-3 rounded-xl border p-3 text-center ${
-            isDark
-              ? "bg-violet-950/50 border-violet-900"
-              : "bg-violet-50 border-violet-100"
-          }`}
-        >
-          <p
-            className={`text-xs font-semibold ${
-              isDark ? "text-violet-300" : "text-violet-700"
-            }`}
-          >
-            {winner
-              ? `Congratulations! Player ${winner} won!`
-              : "Great game! It's a draw."}
-          </p>
-        </div>
-      )}
-
-      <p className={`mt-3 text-center text-[11px] ${mutedText}`}>
-        Take your time. Make your move.
+        {winner
+          ? "Congratulations! Well played."
+          : isDraw
+            ? "A perfect match. Try again!"
+            : "Get three in a row to win"}
       </p>
     </div>
   );
 }
 
-// Main Game
-export default function Game() {
-  const [history, setHistory] = useState([Array(9).fill(null)]);
+// =====================================
+// GAME HISTORY
+// =====================================
 
+function GameHistory({ history, currentMove, onJump, isDark }) {
+  const heading = isDark ? "text-white" : "text-[#385a71]";
+  const muted = isDark ? "text-[#aaaaaa]" : "text-[#385a71]/55";
+
+  return (
+    <aside
+      className={`rounded-xl border p-3.5 ${
+        isDark
+          ? "border-white/[0.07] bg-[#1d3442]"
+          : "border-[#385a71]/10 bg-white"
+      }`}
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h3 className={`text-xs font-semibold ${heading}`}>Game History</h3>
+          <p className={`mt-0.5 text-[10px] ${muted}`}>Previous moves</p>
+        </div>
+
+        <span
+          className={`rounded-md px-2 py-1 text-[10px] font-semibold ${
+            isDark
+              ? "bg-white/[0.06] text-[#aaaaaa]"
+              : "bg-[#385a71]/[0.06] text-[#385a71]/70"
+          }`}
+        >
+          {history.length - 1} moves
+        </span>
+      </div>
+
+      {/* PROGRESS */}
+      <div
+        className={`mb-3 h-1 overflow-hidden rounded-full ${
+          isDark ? "bg-white/10" : "bg-[#385a71]/10"
+        }`}
+      >
+        <div
+          className="h-full rounded-full bg-[#5080a1] transition-all duration-300"
+          style={{
+            width: `${
+              history.length > 1
+                ? (currentMove / (history.length - 1)) * 100
+                : 0
+            }%`,
+          }}
+        />
+      </div>
+
+      {/* MOVE LIST */}
+      <div className="max-h-[245px] space-y-1 overflow-y-auto">
+        {history.map((_, move) => {
+          const isCurrent = move === currentMove;
+          const player = move === 0 ? null : move % 2 === 1 ? "X" : "O";
+
+          return (
+            <button
+              key={move}
+              onClick={() => onJump(move)}
+              aria-current={isCurrent ? "step" : undefined}
+              className={`flex w-full items-center justify-between rounded-md px-2 py-2 text-left transition ${
+                isCurrent
+                  ? isDark
+                    ? "bg-[#5080a1]/20"
+                    : "bg-[#5080a1]/10"
+                  : isDark
+                    ? "hover:bg-white/[0.04]"
+                    : "hover:bg-[#385a71]/[0.04]"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded text-[10px] font-bold ${
+                    player === "X"
+                      ? "bg-[#f6b26b]/15 text-[#f6b26b]"
+                      : player === "O"
+                        ? "bg-[#93c47d]/15 text-[#93c47d]"
+                        : isDark
+                          ? "bg-white/[0.07] text-[#aaaaaa]"
+                          : "bg-[#385a71]/[0.07] text-[#aaaaaa]"
+                  }`}
+                >
+                  {player || "•"}
+                </span>
+
+                <span className={`text-[11px] ${isCurrent ? heading : muted}`}>
+                  {move === 0 ? "Game start" : `Move ${move}`}
+                </span>
+              </div>
+
+              {isCurrent && (
+                <span className="text-[9px] font-semibold text-[#5080a1]">
+                  CURRENT
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </aside>
+  );
+}
+
+// =====================================
+// MAIN APP
+// =====================================
+
+export default function App() {
+  const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
 
-  const [isDark, setIsDark] = useState(getInitialTheme);
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem("tic-tac-toe-theme");
 
-  // Save selected theme
+    if (saved) return saved === "dark";
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  const currentSquares = history[currentMove];
+  const xIsNext = currentMove % 2 === 0;
+
+  const { winner } = calculateWinner(currentSquares);
+  const isDraw = !winner && currentSquares.every(Boolean);
+
   useEffect(() => {
     localStorage.setItem("tic-tac-toe-theme", isDark ? "dark" : "light");
   }, [isDark]);
-
-  function toggleTheme() {
-    setIsDark((prev) => !prev);
-  }
-
-  const currentSquares = history[currentMove];
-
-  const xIsNext = currentMove % 2 === 0;
 
   function handlePlay(nextSquares) {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
@@ -347,249 +367,155 @@ export default function Game() {
     setCurrentMove(0);
   }
 
-  const moves = history.map((squares, move) => {
-    const isCurrentMove = currentMove === move;
-
-    return (
-      <li key={move}>
-        <button
-          onClick={() => jumpTo(move)}
-          className={`
-            w-full flex items-center justify-between
-            rounded-lg px-2.5 py-2 text-xs transition-all
-            ${
-              isCurrentMove
-                ? isDark
-                  ? "bg-violet-950 text-violet-300 font-semibold"
-                  : "bg-violet-50 text-violet-700 font-semibold"
-                : isDark
-                  ? "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-            }
-          `}
-        >
-          <span className="flex items-center gap-2">
-            <span
-              className={`h-6 w-6 rounded-md flex items-center justify-center text-[10px] font-bold ${
-                isCurrentMove
-                  ? "bg-violet-600 text-white"
-                  : isDark
-                    ? "bg-slate-700 text-slate-300"
-                    : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              {move}
-            </span>
-
-            {move === 0 ? "Game Start" : `Move #${move}`}
-          </span>
-
-          {isCurrentMove && <span className="text-[10px]">Current</span>}
-        </button>
-      </li>
-    );
-  });
+  const pageBg = isDark ? "bg-[#172b37]" : "bg-[#f4f7f9]";
 
   return (
-    <main
-      className={`min-h-screen px-4 py-6 sm:py-8 transition-colors duration-300 ${
-        isDark ? "bg-slate-950" : "bg-slate-50"
-      }`}
-    >
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-7">
+    <main className={`min-h-screen transition-colors duration-300 ${pageBg}`}>
+      <div className="mx-auto flex min-h-screen max-w-[760px] flex-col px-4 py-5 sm:px-6">
+        {/* HEADER */}
+        <header
+          className={`mb-6 flex items-center justify-between border-b pb-4 ${
+            isDark ? "border-white/[0.08]" : "border-[#385a71]/10"
+          }`}
+        >
           <div className="flex items-center gap-2.5">
-            <div className="h-10 w-10 rounded-xl bg-violet-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-violet-500/20">
-              XO
+            <div>
+              <img
+                src="./favicon.png"
+                className="h-10 w-10"
+                alt="application icon"
+              />
             </div>
 
             <div>
               <h1
-                className={`text-lg font-bold ${
-                  isDark ? "text-white" : "text-slate-900"
+                className={`text-sm font-bold ${
+                  isDark ? "text-white" : "text-[#385a71]"
                 }`}
               >
                 Tic Tac Toe
               </h1>
-
-              <p
-                className={`text-[11px] ${
-                  isDark ? "text-slate-500" : "text-slate-400"
-                }`}
-              >
-                Classic game, modern experience
+              <p className="text-[10px] text-[#aaaaaa]">
+                Classic strategy game
               </p>
             </div>
           </div>
 
           <span
-            className={`hidden sm:block text-[10px] font-semibold tracking-widest ${
-              isDark ? "text-slate-500" : "text-slate-400"
+            className={`rounded-full border px-2.5 py-1 text-[10px] font-medium ${
+              isDark
+                ? "border-white/10 text-[#aaaaaa]"
+                : "border-[#385a71]/10 text-[#385a71]/60"
             }`}
           >
-            TWO PLAYER GAME
+            2 Players
           </span>
         </header>
 
-        {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_250px] gap-4 items-start">
-          {/* Game Panel */}
-          <section
-            className={`rounded-2xl border p-4 sm:p-5 shadow-sm transition-colors duration-300 ${
+        {/* GAME LAYOUT */}
+        <section className="grid flex-1 content-center items-start gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+          {/* GAME PANEL */}
+          <div
+            className={`rounded-xl border p-4 sm:p-5 ${
               isDark
-                ? "bg-slate-900 border-slate-800"
-                : "bg-white border-slate-200"
+                ? "border-white/[0.07] bg-[#1d3442]"
+                : "border-[#385a71]/10 bg-white shadow-sm shadow-[#385a71]/[0.03]"
             }`}
           >
-            <div className="mb-5">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-violet-500 mb-1.5">
-                Let's Play
-              </p>
-
+            {/* TITLE */}
+            <div className="mb-5 text-center">
               <h2
-                className={`text-xl font-bold ${
-                  isDark ? "text-white" : "text-slate-900"
+                className={`text-lg font-bold tracking-tight ${
+                  isDark ? "text-white" : "text-[#385a71]"
                 }`}
               >
-                Ready to challenge?
+                Let's Play!
               </h2>
-
-              <p
-                className={`text-xs mt-1 ${
-                  isDark ? "text-slate-400" : "text-slate-400"
-                }`}
-              >
-                Get three marks in a row to win the game.
+              <p className="mt-1 text-[11px] text-[#aaaaaa]">
+                Three in a row to win.
               </p>
             </div>
 
+            {/* PLAYERS */}
+            <div className="mx-auto mb-5 grid max-w-[300px] grid-cols-2 gap-2">
+              <PlayerIndicator
+                player="X"
+                isActive={!winner && !isDraw && xIsNext}
+                isDark={isDark}
+              />
+
+              <PlayerIndicator
+                player="O"
+                isActive={!winner && !isDraw && !xIsNext}
+                isDark={isDark}
+              />
+            </div>
+
+            {/* BOARD */}
             <Board
-              xIsNext={xIsNext}
               squares={currentSquares}
+              xIsNext={xIsNext}
               onPlay={handlePlay}
               isDark={isDark}
             />
 
-            {/* Restart */}
-            <button
-              onClick={handleRestart}
-              className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-violet-500/20 transition-all hover:bg-violet-700 active:scale-[0.98]"
-            >
-              <span className="text-lg">↻</span>
-              Restart Game
-            </button>
-          </section>
-
-          {/* History Panel */}
-          <aside
-            className={`rounded-2xl border p-4 shadow-sm transition-colors duration-300 ${
-              isDark
-                ? "bg-slate-900 border-slate-800"
-                : "bg-white border-slate-200"
-            }`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3
-                  className={`text-sm font-bold ${
-                    isDark ? "text-white" : "text-slate-900"
-                  }`}
-                >
-                  Game History
-                </h3>
-
-                <p
-                  className={`text-[11px] mt-0.5 ${
-                    isDark ? "text-slate-500" : "text-slate-400"
-                  }`}
-                >
-                  Track your moves
-                </p>
-              </div>
-
-              <div
-                className={`h-8 w-8 rounded-lg flex items-center justify-center text-sm ${
-                  isDark
-                    ? "bg-slate-800 text-slate-400"
-                    : "bg-slate-100 text-slate-500"
-                }`}
-              >
-                ↗
-              </div>
-            </div>
-
-            <ol className="space-y-1">{moves}</ol>
-
-            {/* Progress */}
+            {/* RESTART */}
             <div
-              className={`mt-4 pt-3 border-t ${
-                isDark ? "border-slate-800" : "border-slate-100"
+              className={`mt-5 flex justify-center border-t pt-4 ${
+                isDark ? "border-white/[0.07]" : "border-[#385a71]/10"
               }`}
             >
-              <div className="flex items-center justify-between text-[11px]">
-                <span className={isDark ? "text-slate-500" : "text-slate-400"}>
-                  Total moves
-                </span>
-
-                <span
-                  className={`font-bold ${
-                    isDark ? "text-slate-200" : "text-slate-700"
-                  }`}
-                >
-                  {currentMove} / 9
-                </span>
-              </div>
-
-              <div
-                className={`mt-2 h-1 rounded-full overflow-hidden ${
-                  isDark ? "bg-slate-800" : "bg-slate-100"
-                }`}
+              <button
+                onClick={handleRestart}
+                className="rounded-lg bg-[#5080a1] px-5 py-2 text-xs font-semibold text-white transition hover:bg-[#385a71] active:scale-[0.98]"
               >
-                <div
-                  className="h-full rounded-full bg-violet-500 transition-all duration-300"
-                  style={{
-                    width: `${(currentMove / 9) * 100}%`,
-                  }}
-                />
-              </div>
+                ↻ &nbsp; New Game
+              </button>
             </div>
-          </aside>
-        </div>
+          </div>
 
-        {/* Footer */}
+          {/* HISTORY */}
+          <GameHistory
+            history={history}
+            currentMove={currentMove}
+            onJump={jumpTo}
+            isDark={isDark}
+          />
+        </section>
+
+        {/* FOOTER */}
         <footer
-          className={`mt-7 border-t pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 ${
-            isDark ? "border-slate-800" : "border-slate-200"
+          className={`mt-6 flex flex-col items-center justify-between gap-2 border-t pt-4 text-center sm:flex-row ${
+            isDark ? "border-white/[0.08]" : "border-[#385a71]/10"
           }`}
         >
-          <p
-            className={`text-[11px] ${
-              isDark ? "text-slate-500" : "text-slate-400"
-            }`}
-          >
+          <p className="text-[10px] text-[#aaaaaa]">
             Made for fun. Built for everyone.
           </p>
 
-          <p
-            className={`text-[11px] ${
-              isDark ? "text-slate-400" : "text-slate-500"
-            }`}
-          >
+          <p className="text-[10px] text-[#aaaaaa]">
             Developer:{" "}
-            <span
-              className={`font-semibold ${
-                isDark ? "text-slate-200" : "text-slate-700"
+            <a
+              href="https://www.linkedin.com/in/arasruislam"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`font-semibold transition hover:underline ${
+                isDark
+                  ? "text-white hover:text-[#f6b26b]"
+                  : "text-[#385a71] hover:text-[#5080a1]"
               }`}
             >
               Ashraful Islam
-            </span>
+            </a>
           </p>
         </footer>
       </div>
 
-      {/* Floating Theme Toggle */}
-      <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
+      {/* THEME */}
+      <ThemeToggle
+        isDark={isDark}
+        onToggle={() => setIsDark((prev) => !prev)}
+      />
     </main>
   );
 }
